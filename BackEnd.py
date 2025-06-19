@@ -1,5 +1,5 @@
 # backend.py
-
+import time
 import os
 from dotenv import load_dotenv
 from groq import Groq
@@ -11,11 +11,18 @@ load_dotenv()
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
 mistral_client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
+
+
+
 def read_file(file_path):
     with open(file_path, "r") as file:
         return file.read()
+    
+
 
 def generate_image_from_audio(file_path):
+
+    start_time = time.time() 
     # Transcription audio
     with open(file_path, "rb") as file:
         transcription = groq_client.audio.transcriptions.create(
@@ -28,12 +35,18 @@ def generate_image_from_audio(file_path):
             temperature=0.0
         )
 
+
+
+
     # Génération du prompt texte
     completion = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {"role": "system", "content": read_file("./context.txt")},
-            {"role": "user", "content": transcription.text}
+            {"role": "system",
+             "content": read_file("./context.txt")},
+
+            {"role": "user", 
+              "content": transcription.text}
         ],
         temperature=1,
         max_completion_tokens=1024,
@@ -72,5 +85,9 @@ def generate_image_from_audio(file_path):
             with open(image_path, "wb") as f:
                 f.write(file_bytes)
             images.append(image_path)
+
+    end_time = time.time()
+
+    print(f"Temps total d'exécution avec {image_agent.model}: {end_time - start_time:.2f} secondes")
 
     return transcription.text, prompt_text, images

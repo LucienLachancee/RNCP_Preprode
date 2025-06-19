@@ -1,0 +1,105 @@
+# backend.py
+import time
+import os
+import requests
+from dotenv import load_dotenv
+from groq import Groq
+
+load_dotenv()
+
+groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
+
+STABILITY_API_KEY = os.getenv("STABLE_API_KEY")
+
+
+def read_file(file_path):
+    with open(file_path, "r") as file:
+        return file.read()
+    
+
+
+def generate_image_from_audio(file_path):
+
+    start_time = time.time() 
+    # Transcription audio
+    with open(file_path, "rb") as file:
+        transcription = groq_client.audio.transcriptions.create(
+            file=file,
+            model="whisper-large-v3-turbo",
+            prompt="Specify context or spelling",
+            response_format="verbose_json",
+            timestamp_granularities=["word", "segment"],
+            language="fr",
+            temperature=0.0
+        )
+
+
+
+
+    # Génération du prompt texte
+    completion = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system",
+             "content": read_file("./context.txt")},
+
+            {"role": "user", 
+              "content": transcription.text}
+        ],
+        temperature=1,
+        max_completion_tokens=1024,
+        top_p=1,
+        stream=True
+    )
+
+    prompt_text = "An ethereal character, lost in a dreamlike landscape of pastel colors, endlessly chewing, using a fork to taste a variety of dishes that seem to appear and disappear within a delicate scene, with surrealist painting accents and a dreamy atmosphere."
+    # for chunk in completion:
+    #     if chunk.choices[0].delta.content:
+    #         prompt_text += chunk.choices[0].delta.content
+
+    # Agent d’image
+    stability_model_name = "sd3" 
+    images = [] 
+    print(f"Prompt sent to Stability AI: '{prompt_text}'")
+
+    try:
+        print(f"Début de la génération d'image avec Stable Diffusion 3...")
+        image_response = requests.post(
+            f"https://api.stability.ai/v2beta/stable-image/generate/{stability_model_name}",
+            headers={
+                "authorization": f"Bearer {STABILITY_API_KEY}",
+                "accept": "image/*"
+            },
+            files={"none": ''}, 
+            data={
+                "prompt": prompt_text,
+                "output_format": "jpeg",
+                
+                
+            },
+        )
+
+        image_response.raise_for_status() # Lève une erreur pour les codes d'état HTTP 4xx/5xx
+
+        if image_response.status_code == 200:
+            image_path = "generated_image_sd3.jpeg" # Nom de fichier fixe ou basé sur l'horodatage
+            with open(image_path, 'wb') as file:
+                file.write(image_response.content)
+            images.append(image_path)
+            print(f"Image générée et sauvegardée sous {image_path}")
+        else:
+            # Cette partie devrait être atteinte par raise_for_status() mais est là par sécurité
+            raise Exception(f"Erreur lors de la génération d'image : {image_response.text}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Erreur réseau ou HTTP lors de la génération d'image Stability AI: {e}")
+        raise # Re-lancer l'exception pour que le programme s'arrête ou soit géré en amont
+    except Exception as e:
+        print(f"Une erreur inattendue est survenue lors de la génération d'image: {e}")
+        raise # Re-lancer l'exception
+
+    end_time = time.time()
+
+    print(f"Temps total d'exécution avec {stability_model_name}: {end_time - start_time:.2f} secondes")
+
+    return transcription.text, prompt_text, images

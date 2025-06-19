@@ -2,7 +2,9 @@
 
 import streamlit as st
 import tempfile
-from BackEnd import generate_image_from_audio
+#from BackEnd import generate_image_from_audio
+from BackEndStability import generate_image_from_audio
+
 
 st.title("🎙️➡️🖼️ Générateur d’image à partir d’un fichier audio")
 
