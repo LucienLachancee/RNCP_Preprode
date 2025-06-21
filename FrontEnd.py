@@ -1,36 +1,36 @@
 import streamlit as st
-from audiorecorder import audiorecorder
 import tempfile
+from pydub import AudioSegment
 from BackEnd import generate_image_from_audio, audio_to_emotions
-import io
 
 st.set_page_config(page_title="🎙️ Générateur d'image à partir de l'audio", layout="centered")
 
 st.title("🎧 Génère une image et des émotions depuis ta voix !")
 
-st.markdown("### 1. Enregistre ton message 🎤")
-audio = audiorecorder("📢 Appuie pour parler", "⏹️ Relâche pour arrêter")
+st.markdown("### 1. Dépose ton fichier audio 🎵 (formats pris en charge : mp3, wav, ogg, m4a...)")
+uploaded_file = st.file_uploader("Glisser-déposer ou parcourir", type=["mp3", "wav", "ogg", "m4a", "flac"])
 
-if len(audio) > 0:
-    st.success("✅ Audio capturé !")
+if uploaded_file is not None:
+    st.success("✅ Fichier audio chargé !")
 
-    # Export audio dans un buffer mémoire
-    buf = io.BytesIO()
-    audio.export(buf, format="wav")
-    audio_bytes = buf.getvalue()
+    # Sauvegarde du fichier uploadé temporairement
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{uploaded_file.name.split('.')[-1]}") as temp_input:
+        temp_input.write(uploaded_file.read())
+        input_path = temp_input.name
+
+    # Conversion vers WAV avec pydub
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_output:
+        sound = AudioSegment.from_file(input_path)
+        sound.export(temp_output.name, format="wav")
+        wav_path = temp_output.name
 
     # Lecture audio dans Streamlit
-    st.audio(audio_bytes, format="audio/wav")
-
-    # Sauvegarde audio temporaire sur disque
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio:
-        temp_audio.write(audio_bytes)
-        temp_path = temp_audio.name
+    st.audio(wav_path, format="audio/wav")
 
     # Traitement audio
     st.markdown("### 2. Résultat 📊🖼️")
     with st.spinner("⏳ Analyse audio en cours..."):
-        transcription, prompt_generated, image_paths = generate_image_from_audio(temp_path)
+        transcription, prompt_generated, image_paths = generate_image_from_audio(wav_path)
         emotions = audio_to_emotions(transcription)
 
     # Affichage transcription
@@ -48,4 +48,4 @@ if len(audio) > 0:
         st.image(img_path, use_container_width=True)
 
 else:
-    st.info("🎙️ Appuie sur le bouton ci-dessus pour enregistrer un message.")
+    st.info("📁 Dépose un fichier audio (mp3, wav, ogg, m4a...) pour commencer.")
