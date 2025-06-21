@@ -1,17 +1,24 @@
 # backend.py
 import time
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from groq import Groq
 from mistralai.models import ToolFileChunk
 from mistralai import Mistral
 import json
 import math
+import streamlit as st
 
-load_dotenv()
+
+
+# load_dotenv()
 
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
 mistral_client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+
+#pour streamlit cloud
+groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+mistral_client = Mistral(api_key=st.secrets["MISTRAL_API_KEY"])
 
 
 
