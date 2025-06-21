@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from groq import Groq
 from mistralai.models import ToolFileChunk
 from mistralai import Mistral
+import json
+import math
 
 load_dotenv()
 
@@ -18,6 +20,11 @@ def read_file(file_path):
     with open(file_path, "r") as file:
         return file.read()
     
+def softmax(prediction):
+    output = {}
+    for sentiment,predicted_value in prediction.items():
+        output[sentiment] = math.exp(predicted_value*10) / sum([math.exp(value*10) for value in prediction.values()])
+    return output
 
 
 def generate_image_from_audio(file_path):
@@ -34,9 +41,6 @@ def generate_image_from_audio(file_path):
             language="fr",
             temperature=0.0
         )
-
-
-
 
     # Génération du prompt texte
     completion = groq_client.chat.completions.create(
@@ -91,3 +95,27 @@ def generate_image_from_audio(file_path):
     print(f"Temps total d'exécution avec {image_agent.model}: {end_time - start_time:.2f} secondes")
 
     return transcription.text, prompt_text, images
+
+def audio_to_emotions (transcription_text):
+    model = "mistral-large-latest"
+
+    client = mistral_client
+
+    chat_response = client.chat.complete(
+        model = model,
+        messages = [
+            {
+                "role": "system",
+                "content": read_file(file_path="context_emotion.txt"),
+            },
+            {
+                "role": "user",
+                "content": f"Analyse le texte ci-dessous. Ta réponse doit être un dictionnaire JSON valide avec des émotions en clé et des scores entre 0 et 1 en valeur. Ne mets pas de texte, uniquement du JSON : {transcription_text}",
+            },
+        ],
+        response_format={"type": "json_object",}
+    )
+    prediction = chat_response.choices[0].message.content
+    prediction_dict = json.loads(prediction)
+  
+    return softmax(prediction_dict)
