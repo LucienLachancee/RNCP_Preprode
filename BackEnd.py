@@ -13,8 +13,8 @@ import streamlit as st
 
 # load_dotenv()
 
-groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
-mistral_client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+# groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
+# mistral_client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
 
 #pour streamlit cloud
 groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
