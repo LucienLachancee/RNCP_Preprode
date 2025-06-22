@@ -3,7 +3,10 @@
 import streamlit as st
 import tempfile
 #from BackEnd import generate_image_from_audio
-from BackEndStability import generate_image_from_audio
+from io import BytesIO
+from PIL import Image
+
+from backend_mistral_pixtral import generate_image_from_audio
 
 
 st.title("🎙️➡️🖼️ Générateur d’image à partir d’un fichier audio")
@@ -24,5 +27,11 @@ if uploaded_file:
     st.write(transcription_text)
 
     st.markdown("### 🖼️ Image générée")
+
+    
+
+
     for path in image_paths:
         st.image(path, caption=path)
+
+
