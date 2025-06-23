@@ -2,9 +2,9 @@ import streamlit as st
 import tempfile
 from BackEnd import generate_image_from_audio, audio_to_emotions
 
-st.set_page_config(page_title="🎙️ Générateur d'image à partir de l'audio", layout="centered")
+st.set_page_config(page_title="Dream Bridge", layout="centered")
 
-st.title("🎧 Génère une image et des émotions depuis ta voix !")
+st.title("Dream Bridge")
 
 st.markdown("### 1. Dépose ton fichier audio 🎵 (formats pris en charge : wav, mp3...)")
 uploaded_file = st.file_uploader("Glisser-déposer ou parcourir", type=["wav", "mp3", "ogg", "flac", "m4a"])
